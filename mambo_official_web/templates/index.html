@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Mambo Official</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><div class="icon">🏍</div><div><h1>Project Mambo</h1><p>KTM Adventure 390 · TN 58 BD 4858</p></div></div>
+  <div class="actions"><a class="btn ghost" href="/backup">Backup</a><a class="btn" href="/report" target="_blank">Report</a></div>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <div><span class="pill">{{ status }}</span><h2>Official restoration + sales dashboard</h2><p>Track repairs, proof documents, buyer leads, and final selling readiness from laptop or phone.</p></div>
+  </section>
+  <section class="metrics">
+    <div class="metric"><small>Total repair cost</small><strong>₹{{ "{:,.0f}".format(total_cost) }}</strong></div>
+    <div class="metric"><small>Repairs done</small><strong>{{ done }}/{{ repairs|length }}</strong></div>
+    <div class="metric"><small>Docs ready</small><strong>{{ ready_docs }}/6</strong></div>
+    <div class="metric"><small>Hot leads</small><strong>{{ hot }}</strong></div>
+  </section>
+  <section class="progress"><div><span>Restoration progress</span><b>{{ pct }}%</b></div><i style="width:{{ pct }}%"></i></section>
+  <nav class="tabs"><a href="#repairs">Repairs</a><a href="#docs">Documents</a><a href="#sales">Sales</a></nav>
+
+  <section id="repairs" class="panel">
+    <div class="head"><h3>Repair tracker</h3><button onclick="openSheet('repairSheet')" class="btn">+ Add</button></div>
+    {% if repairs %}{% for r in repairs %}
+    <article class="card row">
+      <div class="dot {{ r.status }}"></div><div class="grow"><b>{{ r.name }}</b><p>{{ r.date or 'No date' }} · {{ r.parts or 'No parts listed' }}</p>{% if r.notes %}<em>{{ r.notes }}</em>{% endif %}</div>
+      <div class="right"><strong>₹{{ "{:,.0f}".format(r.cost or 0) }}</strong><span>{{ r.status }}</span><form method="post" action="/repairs/{{ r.id }}/delete"><button class="trash">×</button></form></div>
+    </article>
+    {% endfor %}{% else %}<div class="empty">No repairs logged yet.</div>{% endif %}
+  </section>
+
+  <section id="docs" class="panel">
+    <div class="head"><h3>Document vault</h3><button onclick="openSheet('docSheet')" class="btn">+ Upload</button></div>
+    <div class="docgrid">
+      {% for d in docs %}
+      <article class="doc"><b>{{ d.doc_type }}</b><p>{{ d.original_name }}</p><a href="/static/uploads/{{ d.filename }}" target="_blank">Open file</a><form method="post" action="/docs/{{ d.id }}/delete"><button class="trash">Delete</button></form></article>
+      {% endfor %}
+    </div>
+    {% if not docs %}<div class="empty">No documents uploaded yet.</div>{% endif %}
+  </section>
+
+  <section id="sales" class="panel">
+    <div class="head"><h3>Sales pipeline</h3><button onclick="openSheet('leadSheet')" class="btn">+ Lead</button></div>
+    <form class="pricebox" method="post" action="/pricing"><label>Asking price<input name="asking" type="number" value="{{ pricing.asking or '' }}"></label><label>Floor price<input name="floor" type="number" value="{{ pricing.floor or '' }}"></label><button class="btn">Save price</button></form>
+    {% for l in leads %}
+    <article class="card row"><div class="avatar">{{ l.name[:2].upper() }}</div><div class="grow"><b>{{ l.name }}</b><p>{{ l.phone or 'No phone' }} · {{ l.source }}</p>{% if l.notes %}<em>{{ l.notes }}</em>{% endif %}</div><span class="stage {{ l.stage }}">{{ l.stage }}</span><form method="post" action="/leads/{{ l.id }}/delete"><button class="trash">×</button></form></article>
+    {% else %}<div class="empty">No buyer leads yet.</div>{% endfor %}
+  </section>
+</main>
+
+<div class="sheet" id="repairSheet"><form class="sheetbox" method="post" action="/repairs"><button type="button" onclick="closeSheets()" class="x">×</button><h3>Add repair</h3><input name="name" required placeholder="Repair item"><input name="date" type="date"><select name="status"><option value="pending">Pending</option><option value="wip">In progress</option><option value="done">Done</option></select><input name="parts" placeholder="Parts used"><input name="cost" type="number" placeholder="Cost"><textarea name="notes" placeholder="Notes / findings"></textarea><button class="btn">Save repair</button></form></div>
+<div class="sheet" id="docSheet"><form class="sheetbox" method="post" action="/docs" enctype="multipart/form-data"><button type="button" onclick="closeSheets()" class="x">×</button><h3>Upload document</h3><select name="doc_type">{% for t in doc_types %}<option>{{ t }}</option>{% endfor %}</select><input type="file" name="file" required><textarea name="notes" placeholder="Notes"></textarea><input type="hidden" name="ready" value="1"><button class="btn">Upload</button></form></div>
+<div class="sheet" id="leadSheet"><form class="sheetbox" method="post" action="/leads"><button type="button" onclick="closeSheets()" class="x">×</button><h3>Add buyer lead</h3><input name="name" required placeholder="Buyer name"><input name="phone" placeholder="Phone"><select name="source"><option>WhatsApp</option><option>OLX</option><option>Instagram</option><option>Referral</option><option>Other</option></select><select name="stage"><option value="hot">Hot</option><option value="warm">Warm</option><option value="cold">Cold</option></select><textarea name="notes" placeholder="Budget / follow-up notes"></textarea><button class="btn">Save lead</button></form></div>
+<script>function openSheet(id){document.getElementById(id).classList.add('open')} function closeSheets(){document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'))}</script>
+</body>
+</html>
